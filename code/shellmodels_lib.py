@@ -215,7 +215,6 @@ class STDtraining(TrainFunction):
                     loss = criterion(out, train[1:])
                 elif model_name=='mlp':
                     out = model(train[:-1])
-                    print(out.shape,train[:-1].shape)
                     loss = criterion(out, train[1:])
                         
                 loss.backward()
@@ -240,9 +239,10 @@ class STDtraining(TrainFunction):
                 
                 if validloss.item() < min_perf :
                     min_perf = validloss.item()
-                    th.save(model.state_dict(), './'+str(folder)+'/models/epochs_'+str(nepochs))
                     bestmodel=model
-                    bestmodel.load_state_dict(th.load('./'+str(folder)+'/models/epochs_'+str(nepochs)))
+                    if save: 
+                        th.save(model.state_dict(), './'+str(folder)+'/models/epochs_'+str(nepochs))
+                        bestmodel.load_state_dict(th.load('./'+str(folder)+'/models/epochs_'+str(nepochs)))
             model=bestmodel
 
             return train_loss, valid_loss
@@ -674,7 +674,6 @@ class MLP(nn.Module):
 
 
     def forward(self, input):
-
         output = self.MLP(input.to(device))
         #print("forward output size =",output.view(-1, self.nfeatures *self.future).shape)
         return output #.view(-1, self.future, self.nfeatures)

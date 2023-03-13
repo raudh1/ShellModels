@@ -4,7 +4,7 @@ from libraries import *
 
 
 h = 1
-f = 25
+f = 1
 model=MLP(100,12,h,f,0)
 #model=Sequence(100,1,12)
 optimizer=th.optim.Adam(model.parameters(),lr=0.001)
@@ -18,7 +18,7 @@ train_data,valid_data,test_data=split_data(data)
 
 
 
-trainer = FORtraining(model, optimizer, train_data, valid_data, history=h, future=f, nepochs=100, bsize=32, nprints=2, save=False)
+trainer = STDtraining(model, optimizer, train_data, valid_data, history=h, future=f, nepochs=100, bsize=32, nprints=2, save=False)
 t, v = trainer.train_model()
 
 
