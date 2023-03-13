@@ -28,7 +28,7 @@ def load_data(path,filename,nshells=12,sampling=1
         alldata = np.load(path+filename)[2:-2]
         print(path+filename)
     except FileNotFoundError:
-        print("file not found")
+        print("file not found !!")
         print(path+filename)
     
     if verbose:
@@ -449,7 +449,6 @@ class FORtraining(TrainFunction):
             return train_loss, valid_loss
 
         if optimizer_name=='adam':
-
             criterion = nn.MSELoss()
             while e < nepochs:
                 model.train()
@@ -458,18 +457,15 @@ class FORtraining(TrainFunction):
                     optimizer.zero_grad()
                     bidx = indices[i * bsize:min((i + 1) * bsize, L)]
                     inputs, refs = batchify(train, bidx, history, future,model)
-
                     if model_name=='lstm':
                         h0, c0 = model.get_init(bsize)
                         outputs, (h, c) = model.generate(inputs, future, h0, c0)
                     elif model_name=='mlp':
                         outputs = model.forward(inputs.to(device))
-
                     loss = criterion(outputs, refs)
                     loss.backward()
                     optimizer.step()
                     eloss += loss.item()
-                    #print(eloss)    
                 
                 train_loss.append(eloss)
 
@@ -508,16 +504,17 @@ class FORtraining(TrainFunction):
 
                         validloss = criterion(outputs, refs)
                     valid_loss.append(validloss.item())
-                e += 1
                 if e % (nepochs // nprints) == 0:
                     print(e, "train loss", train_loss[-1], "valid loss",
                         valid_loss[-1])
+
                 if save:
                     if validloss.item() < min_perf :
                         min_perf = validloss.item()
                         name='epochs=' +str(nepochs)+'_H='+str(history)+'_F='+str(future)+'_bsize='+str(bsize)
                         th.save(model.state_dict(), './results/models/'+name)
-                
+                e += 1
+
             return train_loss, valid_loss    
             
 
@@ -678,9 +675,9 @@ class MLP(nn.Module):
 
     def forward(self, input):
 
-        output = self.MLP(input.to(device)).flatten()
+        output = self.MLP(input.to(device))
         #print("forward output size =",output.view(-1, self.nfeatures *self.future).shape)
-        return output.view(-1, self.nfeatures*self.future)
+        return output #.view(-1, self.future, self.nfeatures)
 
 
     def generate(self, init_points, N, h_t=None, c_t=None, full_out=False):
@@ -750,7 +747,7 @@ path_model="./results_LBFGS/rawdata/spectrum/"
 name_data="Uf_N12.npy"     # Not so long dataset 
 
 
-path_data='../dataset/N12/'
+path_data='./'
 
 n=1
 sampling=30
