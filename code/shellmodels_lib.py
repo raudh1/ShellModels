@@ -106,6 +106,19 @@ def struct_func(u_n,order,h,f,title,save=False,folder=''):
 
 ######################--------BATCH-------------------#################
 def batchify(data, indices, history, future, model):
+    
+    """
+    Function that given data of dimension (L,bs,features)  ex: (10_000,100,12)
+
+    Creates a batch with dimension (h,100,12) and (f,100,12) for lstm
+    
+    Creates a batch with dimension (100,h*10_000) and (100,f*10_000)
+
+    """
+
+    
+    
+    
     bs = len(indices)
     S = data.shape[-1]
 
@@ -125,7 +138,7 @@ def batchify(data, indices, history, future, model):
         outX = th.zeros(bs, history * S)
         outY = th.zeros(bs, future * S)
         for i in range(bs):
-            start = indices[i]
+            start = indices[i]  
             outX[i, :] = data[start:start + history].flatten().to(device)
             outY[i, :] = data[start + history:start + history + future].flatten().to(device)
         return outX, outY
@@ -659,18 +672,15 @@ class MLP(nn.Module):
         self.device = device
 
         self.MLP = nn.Sequential(
-            nn.Linear(self.nfeatures*h, self.neurons),
+            nn.Linear(self.nfeatures*h, 2*self.neurons),
             nn.ReLU(),
-            nn.Linear(self.neurons, self.neurons+100),
+            nn.Linear(2*self.neurons, self.neurons+100),
             nn.ReLU(),
             nn.Linear(self.neurons+100,self.nfeatures*f),
             nn.Sigmoid()
         ).to(device)    
 
-    """ for module in self.MLP.modules():
-        if isinstance(module, nn.Linear):
-            nn.init.normal_(module.weight)
-    """
+
 
 
     def forward(self, input):
@@ -697,28 +707,6 @@ class MLP(nn.Module):
             return output 
 
 
-"""     def forward(self, input):
-
-        output = self.MLP(input.to(device)).flatten()
-        #print("forward output size =",output.view(-1, self.nfeatures *self.future).shape)
-        return output.view(-1, self.nfeatures*self.future)
-
-    def generate(self, init_points, N, h_t=None, c_t=None, full_out=False):
-        L, B, _ = init_points.shape
-        outl = N
-        offset = 0
-        if full_out:
-            outl = N + L
-            offset = L
-        output = th.zeros(outl, B, self.nfeatures).to(device)
-        if full_out:
-            output[:offset] = init_points
-        # inp is of expected size 1, B, D (number of features)
-        inp = init_points[-1].unsqueeze(0).to(device)
-        for i in range(offset, N + offset):
-            inp = self.forward(inp.to(device))
-            output[i] = inp
-        return output """
 
 #######################--------STATISTICAL ANALYSIS----#################
 
@@ -741,19 +729,19 @@ def struct_func(u_n,order,h,f,title,save=False,folder=''):
 
 
 
-    path_data="./data/"
-path_model="./results_LBFGS/rawdata/spectrum/"
-name_data="Uf_N12.npy"     # Not so long dataset 
+#path_data="./data/"
+#path_model="./results_LBFGS/rawdata/spectrum/"
+#name_data="Uf_N12.npy"     # Not so long dataset 
 
 
-path_data='./'
+#path_data='./dataset/N12/'
 
-n=1
-sampling=30
-N=12
-knn=np.power(2,np.arange(N+4))
-kn=knn*np.power(2,-4.)
-U_true=load_data(path_data,name_data,sampling=sampling)
+#n=1
+#sampling=30
+#N=12
+#knn=np.power(2,np.arange(N+4))
+#kn=knn*np.power(2,-4.)
+#U_true=load_data(path_data,name_data,sampling=sampling)
 
 
 
@@ -847,7 +835,6 @@ def exponents(S):
     #print("shape inside exponents computing ",S.shape)
     return stats.linregress(np.log(kn[2:-2][2:-3]),np.log(S[2:-3]))
 
-#____________________main_____________________#
 
 
 def genSTDplots(Nsample,order,h,f,long=False,s=0.1,save=False):
