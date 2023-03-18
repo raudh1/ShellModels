@@ -39,21 +39,25 @@ def load_data(path,filename,nshells=12,sampling=1
     data = data[::sampling]
     data = np.abs(data)
     L = len(data)
+    min=data.min(axis=0)
+    max=data.max(axis=0)
+    
     print("After subsampling : ", data.shape )
     if difference:
         data = data[1:] - data[:-1]  # x_n-x_{n-1}
 
     if normalize01:
-        data = (data - data.min(axis=0)) / (data.max(axis=0) - data.min(axis=0))
-        if normalize11:
-            data = data * 2 - 1    
+        
+        data = (data - min) / (max - min)
+       # if normalize11:
+       #     data = data * 2 - 1  
 
     if normalize11:
-        data = (data - data.min(axis=0)) / (data.max(axis=0) - data.min(axis=0))
+        data = (data - min) / (max - min)
         data = data * 2 - 1    
     
    
-    return data
+    return data ,(max , min)
 
 ######################--------SPLIT DATASET-------------------################
 
@@ -120,7 +124,7 @@ def batchify(data, indices, history, future, model):
     
     
     bs = len(indices)
-    S = data.shape[-1]
+    S = data.shape[-1] # number of shells
 
 
     if isinstance(model, Sequence):
@@ -309,7 +313,7 @@ class FORtraining(TrainFunction):
 
     def __init__(self, model, optimizer, train, valid, history=1, future=15,
      nepochs=10, bsize=100, nprints=10, save=False):
-        super().__init__(model, optimizer, train, valid, history, future, nepochs, bsize, nprints, save)
+        super().__init__(model, optimizer, train, valid, history, future,nepochs, bsize, nprints, save)
 
 
     def get_param(self,model,optimizer):
@@ -530,8 +534,22 @@ class FORtraining(TrainFunction):
 
             return train_loss, valid_loss    
             
+#-----------------------------------------------------TRAIN PLOT-----------------------------------------------------------------------#
 
-
+def plot_train(tl, vl,save=True,show=False,logplot=False):
+    plt.figure(figsize=(10,8))
+    plt.plot(tl,label='train_loss')
+    plt.plot(vl,label='val_loss')
+    plt.xlabel(r'$epochs$', fontsize=15)
+    plt.ylabel(r'$Loss$', fontsize=15)
+    plt.legend()
+    if logplot:
+        plt.yscale('log')     
+    if save:
+        plt.savefig('./'+str(folder_name)+'/plots/loss/learningCurve_'+str(len(vl))+'_epoch'+
+        '_sampling_'+str(sampling)+'h_'+str(history)+'_f_'+str(future)+'_run_'+str(n))
+    if show:
+        plt.show()
 
 #######################--------MODEL INIT----#################
 
@@ -654,7 +672,6 @@ class Sequence(nn.Module):
             print(S/(N-5))
         return output, (h_t, c_t)    
 
-
 class MLP(nn.Module):
     def __init__(self,
                  neurons=100,
@@ -686,10 +703,45 @@ class MLP(nn.Module):
     def forward(self, input):
         output = self.MLP(input.to(device))
         #print("forward output size =",output.view(-1, self.nfeatures *self.future).shape)
-        return output #.view(-1, self.future, self.nfeatures)
+        return output#.view(-1, self.future, self.nfeatures)
+
+    def generate_new(self, init_points, N, full_out=False):
+        L, B, _ = init_points.shape
+        outl = N
+        offset = 0
+        if full_out:
+            outl = N + L
+            offset = L
+        output = th.zeros(outl*self.future, B, self.nfeatures).to(device)
+        if full_out:
+            output[:offset*self.future] = init_points.repeat(self.future, 1, 1)
+        # inp is of expected size 1, B, D (number of features)
+        inp = init_points[-1].unsqueeze(0).to(device)
+        for i in range(offset*self.future, (N + offset)*self.future):
+            inp = self.forward(inp.to(device))
+            output[i] = inp
+            #output[i*self.future:i*self.future+self.future] = inp.view(self.future, -1)
+            if self.future==1:
+                inp = inp.unsqueeze(0)
+            else:
+                inp = inp.view(1, B, self.nfeatures*self.future)
+                if i%self.future==self.future-1:
+                    inp = inp[:, :, -self.nfeatures:]
+        if self.future==1:
+            return output.view(-1, B, self.nfeatures)
+        else:
+            return output.view(-1, B, self.nfeatures*self.future)
 
 
-    def generate(self, init_points, N, h_t=None, c_t=None, full_out=False):
+
+    def generate(self, init_points, N, full_out=False):
+
+        #forecast case, the model receives data in shape (BatchSize,f*nshell) 
+        
+        
+        
+        if self.future==1:          #   std case, the model receives data in shape (L,bs,nshells)  tested ok
+                
             L, B, _ = init_points.shape
             outl = N
             offset = 0
@@ -702,6 +754,57 @@ class MLP(nn.Module):
             # inp is of expected size 1, B, D (number of features)
             inp = init_points[-1].unsqueeze(0).to(device)
             for i in range(offset, N + offset):
+                inp = self.forward(inp.to(device))
+                output[i] = inp
+            return output 
+
+
+            
+            """ 
+            
+            #init_points=init_points.flatten()
+            print("generating function")
+            print(init_points.shape)
+            L, B,_ = init_points.shape
+            f=self.future
+            outl = N
+            offset = 0
+            if full_out:
+                outl = N + L
+                offset = L
+            output = th.zeros(B, L * self.nfeatures).to(device)
+            #output = th.zeros(outl, B, self.nfeatures).to(device)
+            print("ouput",output.shape)
+            if full_out:
+                output[:offset] = init_points
+            # inp is of expected size 1, B, D (number of features)
+
+            #inp = init_points[-1].unsqueeze(0).to(device)
+            inp = init_points[-1].to(device)
+
+            print("inp",inp.shape)
+            
+            for i in range(offset, (N + offset)//f):
+                inp = self.forward(inp.to(device))           
+                print("forward dimension=",inp.shape)
+                output[i] = inp
+            print("output",output.shape)
+            return output.view(N,self.features)  """
+        else:      #forecast case, training data are in dimension (bs,f*nshells)  
+            
+            
+            L, B, _ = init_points.shape
+            outl = N
+            offset = 0
+            if full_out:
+                outl = N + L
+                offset = L
+            output = th.zeros(outl*self.future, B, self.nfeatures).to(device)
+            if full_out:
+                output[:offset] = init_points
+            # inp is of expected size 1, B, D (number of features)
+            inp = init_points[-1].unsqueeze(0).to(device)
+            for i in range(offset, (N + offset)//self.future):
                 inp = self.forward(inp.to(device))
                 output[i] = inp
             return output 
