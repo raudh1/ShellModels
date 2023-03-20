@@ -628,9 +628,6 @@ class Sequence(nn.Module):
         for i in range(offset, N + offset):
             inp, (h_t, c_t) = self.forward(inp.to(device), h_t, c_t)
             output[i] = inp
-            #------------TRY------------------#
-            h_t.detach()
-            c_t.detach()
         return output, (h_t, c_t)
 
 
@@ -934,10 +931,15 @@ def fit_exp(S_model,S_true,show=False,save=False):
     plt.legend()
     plt.savefig('./results_LBFGS/plots/spectrum/strucfunc/statistic')
 
-def exponents(S):
-    #print("shape inside exponents computing ",S.shape)
-    return stats.linregress(np.log(kn[2:-2][2:-3]),np.log(S[2:-3]))
+def exponents(S,kn,nshells):
 
+
+
+    if len(S)==1:
+        #print("shape inside exponents computing ",S.shape)
+        return stats.linregress(np.log(kn[2:-2][2:-3]),np.log(S[2:-3]))
+    else:
+        return stats.linregress(np.log(kn[2:-2][2:-3]),np.log(S[2:-3]))
 
 
 def genSTDplots(Nsample,order,h,f,long=False,s=0.1,save=False):
