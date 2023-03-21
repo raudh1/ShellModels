@@ -68,7 +68,7 @@ if optimizer_type=='adam':
 elif optimizer_type=='lbfgs':
     optimizer = th.optim.LBFGS(model.parameters(),lr=lr)
 
-data, (max, min) = load_data(datapath, datafile, sampling=sampling)
+data, (max, min) = load_data(datapath, datafile, sampling=sampling,nshells=nshells)
 train_data, valid_data, test_data = split_data(data)
 
 if training_type == 'STD':
@@ -81,7 +81,7 @@ elif training_type == 'FOR':
 train_loss, valid_loss = trainer.train_model()
 
 
-traj = model.generate(train_data, len(data)).detach().numpy()
+traj = model.generate(train_data, len(data)).cpu().detach().numpy()
 regen=traj*(max-min)+min
 model_exps=np.zeros([5,nshells])
 true_exps=np.zeros([5,nshells])
