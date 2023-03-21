@@ -8,3 +8,4 @@ from matplotlib import pyplot as plt
 import pandas as pd
 import math
 import logging
+from scipy import stats
