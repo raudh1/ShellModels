@@ -209,8 +209,8 @@ class STDtraining(TrainFunction):
         """
         model=self.model
         optimizer=self.optimizer
-        train=self.train
-        valid=self.valid
+        train=self.train.to(device)
+        valid=self.valid.to(device)
         nepochs=self.nepochs
         save=self.save
         train_loss = []
@@ -229,10 +229,10 @@ class STDtraining(TrainFunction):
                 optimizer.zero_grad()
                 if model_name=='lstm':
                     out, (h, c) = model(train[:-1])
-                    loss = criterion(out, train[1:])
+                    loss = criterion(out.to(device), train[1:])
                 elif model_name=='mlp':
                     out = model(train[:-1])
-                    loss = criterion(out, train[1:])
+                    loss = criterion(out.to(device), train[1:])
                         
                 loss.backward()
                 optimizer.step()
@@ -242,10 +242,10 @@ class STDtraining(TrainFunction):
                     model.eval()
                     if model_name=='lstm':
                         pred, _ = model(valid[:-1])
-                        validloss = criterion(pred, valid[1:])
+                        validloss = criterion(pred.to(device), valid[1:])
                     elif model_name=='mlp':
                         pred = model(valid[:-1])
-                        validloss = criterion(pred, valid[1:])
+                        validloss = criterion(pred.to(device), valid[1:])
                     
                     
                     valid_loss.append(validloss.item())
