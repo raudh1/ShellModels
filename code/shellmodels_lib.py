@@ -798,7 +798,7 @@ class MLP(nn.Module):
             if full_out:
                 outl = N + L
                 offset = L
-            output = th.zeros(B, outl*self.future, self.nfeatures).to(device)
+            output = th.zeros( outl*self.future,B, self.nfeatures).to(device)
             
             if full_out:
                 output[:offset] = init_points
@@ -807,18 +807,18 @@ class MLP(nn.Module):
             for i in range(offset, (N + offset)//self.future):
                 print("begin input shape=",inp.shape)
                 if i==0:
-                    output=self.forward(inp.to(device)).view(-1, self.future, self.nfeatures)
-                    inp=output[:,-1,:].unsqueeze(0)
+                    output=self.forward(inp.to(device)).view(self.future,1 , self.nfeatures)
+                    inp=output[-1,:,:].unsqueeze(0)
                 else:
-                    future_points=self.forward(inp.to(device)).view(-1, self.future, self.nfeatures)
-                    output =th.cat((output,future_points),dim=1)
-                    inp=future_points[:,-1,:].unsqueeze(0)
-                #print("forward shape",output.shape)
-                #print("inp shape =",inp.shape)
-
+                    future_points=self.forward(inp.to(device)).view( self.future,1, self.nfeatures)
+                    output =th.cat((output,future_points),dim=0)
+                    inp=future_points[-1,:,:].unsqueeze(0)
+                print("forward shape",output.shape)
+                print("inp shape =",inp.shape)
+                
             #print(output[:100])
             print("max output",output.max(axis=1))
-            return output 
+            return output#.view(N,1,self.nfeatures)
 
 
 
