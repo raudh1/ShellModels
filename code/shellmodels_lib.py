@@ -476,10 +476,10 @@ class FORtraining(TrainFunction):
                     inputs, refs = batchify(train, bidx, history, future,model)
                     if model_name=='lstm':
                         h0, c0 = model.get_init(bsize)
-                        outputs, (h, c) = model.generate(inputs, future, h0, c0)
+                        outputs, (h, c) = model.generate(inputs.to(device), future, h0, c0)
                     elif model_name=='mlp':
                         outputs = model.forward(inputs.to(device))
-                    loss = criterion(outputs, refs)
+                    loss = criterion(outputs, refs.to(device))
                     loss.backward()
                     optimizer.step()
                     eloss += loss.item()
@@ -519,7 +519,7 @@ class FORtraining(TrainFunction):
                         elif model_name=='mlp':    
                             outputs = model.forward(inputs.to(device))    
 
-                        validloss = criterion(outputs, refs)
+                        validloss = criterion(outputs, refs.to(device))
                     valid_loss.append(validloss.item())
                 if e % (nepochs // nprints) == 0:
                     print(e, "train loss", train_loss[-1], "valid loss",
@@ -702,6 +702,9 @@ class MLP(nn.Module):
         #print("forward output size =",output.view(-1, self.nfeatures *self.future).shape)
         return output#.view(-1, self.future, self.nfeatures)
 
+
+
+
     def generate_new(self, init_points, N, full_out=False):
         L, B, _ = init_points.shape
         outl = N
@@ -734,8 +737,6 @@ class MLP(nn.Module):
     def generate(self, init_points, N, full_out=False):
 
         #forecast case, the model receives data in shape (BatchSize,f*nshell) 
-        
-        
         
         if self.future==1:          #   std case, the model receives data in shape (L,bs,nshells)  tested ok
                 
@@ -788,22 +789,35 @@ class MLP(nn.Module):
             print("output",output.shape)
             return output.view(N,self.features)  """
         else:      #forecast case, training data are in dimension (bs,f*nshells)  
-            
-            
+
             L, B, _ = init_points.shape
+            print("init point shape= ",init_points.shape)
+
             outl = N
             offset = 0
             if full_out:
                 outl = N + L
                 offset = L
-            output = th.zeros(outl*self.future, B, self.nfeatures).to(device)
+            output = th.zeros(B, outl*self.future, self.nfeatures).to(device)
+            
             if full_out:
                 output[:offset] = init_points
             # inp is of expected size 1, B, D (number of features)
             inp = init_points[-1].unsqueeze(0).to(device)
             for i in range(offset, (N + offset)//self.future):
-                inp = self.forward(inp.to(device))
-                output[i] = inp
+                print("begin input shape=",inp.shape)
+                if i==0:
+                    output=self.forward(inp.to(device)).view(-1, self.future, self.nfeatures)
+                    inp=output[:,-1,:].unsqueeze(0)
+                else:
+                    future_points=self.forward(inp.to(device)).view(-1, self.future, self.nfeatures)
+                    output =th.cat((output,future_points),dim=1)
+                    inp=future_points[:,-1,:].unsqueeze(0)
+                #print("forward shape",output.shape)
+                #print("inp shape =",inp.shape)
+
+            #print(output[:100])
+            print("max output",output.max(axis=1))
             return output 
 
 
@@ -934,13 +948,12 @@ def fit_exp(S_model,S_true,show=False,save=False):
 def exponents(S,kn,nshells):
 
 
-
-    if len(S)==1:
-        #print("shape inside exponents computing ",S.shape)
-        return stats.linregress(np.log(kn[2:-2][2:-3]),np.log(S[2:-3]))
-    else:
-        return stats.linregress(np.log(kn[2:-2][2:-3]),np.log(S[2:-3]))
-
+    if nshells==12:
+            #print("shape inside exponents computing ",S.shape)
+            return stats.linregress(np.log(kn[2:-2][2:-3]),np.log(S[2:-3]))
+    if nshells==19:
+            return stats.linregress(np.log(kn[2:-2][3:-4]),np.log(S[3:-4]))
+    
 
 def genSTDplots(Nsample,order,h,f,long=False,s=0.1,save=False):
 

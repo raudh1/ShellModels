@@ -6,7 +6,7 @@ parser = argparse.ArgumentParser(description='Train and generate trajectories us
 parser.add_argument('--model', type=str, default='MLP', choices=['MLP', 'LSTM'], help='Type of model to use')
 parser.add_argument('--h', type=int, default=1, help='Number of historical timesteps to consider')
 parser.add_argument('--f', type=int, default=25, help='Number of future timesteps to predict')
-parser.add_argument('--training', type=str, default='STD', choices=['STD', 'FOR'], help='Type of training to use')
+parser.add_argument('--training', type=str, default='FOR', choices=['STD', 'FOR'], help='Type of training to use')
 parser.add_argument('--optim', type=str, default='adam',choices=['adam','lbfgs'], help='Choose the optimizer')
 parser.add_argument('--lr', type=float, default=0.001, help='Learning rate for the optimizer')
 parser.add_argument('--epochs', type=int, default=10, help='Number of epochs for training')
