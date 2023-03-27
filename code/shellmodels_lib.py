@@ -160,9 +160,10 @@ class TrainFunction:
                 nepochs=10,
                 bsize=100,
                 nprints=10,
+                patience=50,
                 save=False
                 ):
-
+        self.patience=patience
         self.model=model
         self.optimizer=optimizer
         self.train=train
@@ -177,8 +178,8 @@ class TrainFunction:
 class STDtraining(TrainFunction):
 
 
-    def __init__(self, model, optimizer, train, valid, history=1, future=15, nepochs=10, bsize=100, nprints=10, save=False):
-        super().__init__(model, optimizer, train, valid, history, future, nepochs, bsize, nprints, save)
+    def __init__(self, model, optimizer, train, valid, history=1, future=15, patience=50 ,nepochs=10, bsize=100, nprints=10, save=False):
+        super().__init__(model, optimizer, train, valid, history, future, nepochs, bsize,patience, nprints, save)
 
 
     def get_param(self,model,optimizer):
@@ -312,8 +313,8 @@ class STDtraining(TrainFunction):
 class FORtraining(TrainFunction):
 
     def __init__(self, model, optimizer, train, valid, history=1, future=15,
-     nepochs=10, bsize=100, nprints=10, save=False):
-        super().__init__(model, optimizer, train, valid, history, future,nepochs, bsize, nprints, save)
+     nepochs=10, bsize=100, nprints=10, patience=50 , save=False):
+        super().__init__(model, optimizer, train, valid, history, future,nepochs, bsize, nprints,patience, save)
 
 
     def get_param(self,model,optimizer):
@@ -354,6 +355,7 @@ class FORtraining(TrainFunction):
         $$
 
         """
+        patience=self.patience
         model=self.model
         optimizer=self.optimizer
         train=self.train
@@ -751,6 +753,7 @@ class MLP(nn.Module):
                 output[:offset] = init_points
             # inp is of expected size 1, B, D (number of features)
             inp = init_points[-1].unsqueeze(0).to(device)
+            print(inp.shape)
             for i in range(offset, N + offset):
                 inp = self.forward(inp.to(device))
                 output[i] = inp
@@ -788,7 +791,7 @@ class MLP(nn.Module):
                 output[i] = inp
             print("output",output.shape)
             return output.view(N,self.features)  """
-        else:      #forecast case, training data are in dimension (bs,f*nshells)  
+        else:      #forecast case, training data are in dimension (L,B,features)  
 
             L, B, _ = init_points.shape
             print("init point shape= ",init_points.shape)
@@ -803,9 +806,9 @@ class MLP(nn.Module):
             if full_out:
                 output[:offset] = init_points
             # inp is of expected size 1, B, D (number of features)
-            inp = init_points[-1].unsqueeze(0).to(device)
+            inp = init_points[-1].to(device)#.unsqueeze(0).to(device)
             for i in range(offset, (N + offset)//self.future):
-                print("begin input shape=",inp.shape)
+                #print("begin input shape=",inp.shape)
                 if i==0:
                     output=self.forward(inp.to(device)).view(self.future,1 , self.nfeatures)
                     inp=output[-1,:,:].unsqueeze(0)
@@ -813,11 +816,11 @@ class MLP(nn.Module):
                     future_points=self.forward(inp.to(device)).view( self.future,1, self.nfeatures)
                     output =th.cat((output,future_points),dim=0)
                     inp=future_points[-1,:,:].unsqueeze(0)
-                print("forward shape",output.shape)
-                print("inp shape =",inp.shape)
+                #print("forward shape",output.shape)
+                #print("inp shape =",inp.shape)
                 
             #print(output[:100])
-            print("max output",output.max(axis=1))
+            #print("max output",output.max(axis=1))
             return output#.view(N,1,self.nfeatures)
 
 
