@@ -11,9 +11,9 @@
 #SBATCH --output=./log/MLP_for_12_%j.log   # Standard output and error log
 pwd; hostname; date
 
-for n in {1..1}
+for n in {1..10}
 	do
-	srun python test.py --run $n --epochs 200 --train FOR
+	srun python test.py --run $n --epochs 800 --train FOR --lr 0.002
 	echo "finished run " $n
 	done
 date

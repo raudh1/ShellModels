@@ -11,9 +11,9 @@
 #SBATCH --output=./log/MLP_std_19_%j.log   # Standard output and error log
 pwd; hostname; date
 
-for n in {1..10}
+for n in {1..50}
 	do
-	srun python test.py --run $n --epochs 200 --nshells 19
+	srun python test.py --run $n --epochs 500 --nshells 19
 	echo "finished run " $n
 	done
 date

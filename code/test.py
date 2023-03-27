@@ -10,6 +10,8 @@ parser.add_argument('--training', type=str, default='FOR', choices=['STD', 'FOR'
 parser.add_argument('--optim', type=str, default='adam',choices=['adam','lbfgs'], help='Choose the optimizer')
 parser.add_argument('--lr', type=float, default=0.001, help='Learning rate for the optimizer')
 parser.add_argument('--epochs', type=int, default=10, help='Number of epochs for training')
+parser.add_argument('--patience', type=int, default=50, help='Number of epochs of loss not decreasing to stop the train')
+
 parser.add_argument('--batch-size', type=int, default=100, help='Batch size for training')
 parser.add_argument('--print-every', type=int, default=5, help='Print progress every N epochs')
 parser.add_argument('--nshells', type=int, default=12, help='Number of shells')
@@ -18,6 +20,7 @@ parser.add_argument('--run', type=int, default=1, help='Run number')
 
 
 args = parser.parse_args()
+patience=args.patience
 run=args.run
 model_type = args.model
 h = args.h
@@ -50,11 +53,15 @@ def folder_generator(save_data=False,save_plot=False,save_model=False,
     
     if save_model:
         return folder+'model/'
+        print("folder",folder_generator(save_model=True))
     if save_data:
         return folder+'raw/'
+        print("folder",folder_generator(save_data=True))
+
+
     if save_plot:
         return folder+'plot/'
-print("folder",folder_generator(save_plot=True))
+        print("folder",folder_generator(save_plot=True))
 
 
 
@@ -73,16 +80,19 @@ train_data, valid_data, test_data = split_data(data)
 
 if training_type == 'STD':
         trainer = STDtraining(model, optimizer, train_data, valid_data,
-                          history=h, future=f, nepochs=nepochs, bsize=bsize, nprints=nprints, save=False)
+                          history=h, future=f, nepochs=nepochs,patience=patience, bsize=bsize, nprints=nprints, save=False)
 elif training_type == 'FOR':
     trainer = FORtraining(model, optimizer, train_data, valid_data,
-                          history=h, future=f, nepochs=nepochs, bsize=bsize, nprints=nprints, save=False)
+                          history=h, future=f, nepochs=nepochs,patience=patience, bsize=bsize, nprints=nprints, save=False)
 
 train_loss, valid_loss = trainer.train_model()
 
 
 traj = model.generate(train_data, len(data)).cpu().detach().numpy()
+print("TRAJ SHAPE ",traj.shape)
 regen=traj*(max-min)+min
+#print("max, min = ",max,min)
+#print(traj[:,:,:])
 model_exps=np.zeros([5,nshells])
 true_exps=np.zeros([5,nshells])
 
