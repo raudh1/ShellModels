@@ -35,11 +35,14 @@ bsize = args.batch_size
 nprints = args.print_every
 nshells=args.nshells
 datapath ='../dataset/N'+str(nshells)+'/'
+sampling = args.sampling
 if nshells==12:
+    sampling=30
     datafile = 'Uf_N12.npy'
 elif nshells==19:
+    sampling=20
     datafile = 'Uf_N19_200k_.npy'
-sampling = args.sampling
+
 #----------------------param physical data----------------------#
 N=nshells
 knn=np.power(2,np.arange(N+4))
