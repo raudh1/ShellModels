@@ -38,7 +38,7 @@ datapath ='../dataset/N'+str(nshells)+'/'
 if nshells==12:
     datafile = 'Uf_N12.npy'
 elif nshells==19:
-    datafile = 'Uf_N19_1_.npy'
+    datafile = 'Uf_N19_200k_.npy'
 sampling = args.sampling
 #----------------------param physical data----------------------#
 N=nshells
