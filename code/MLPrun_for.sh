@@ -13,7 +13,7 @@ pwd; hostname; date
 
 for n in {1..10}
 	do
-	srun python test.py --run $n --epochs 800 --train FOR --lr 0.002
+	srun python test.py --run $n --epochs 1000 --train FOR --lr 0.002
 	echo "finished run " $n
 	done
 date

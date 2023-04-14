@@ -8,12 +8,12 @@
 #SBATCH --cpus-per-task=10 
 #SBATCH --mem=16gb                     # Job memory request
 #SBATCH --time=12:00:00               # Time limit hrs:min:sec
-#SBATCH --output=./log/MLP_std_19_%j.log   # Standard output and error log
+#SBATCH --output=./log/MLP_std_19_1k_%j.log   # Standard output and error log
 pwd; hostname; date
 
 for n in {1..50}
 	do
-	srun python test.py --run $n --epochs 500 --nshells 19
+	srun python test.py --run $n --epochs 1000 --nshells 19 --training STD 
 	echo "finished run " $n
 	done
 date
