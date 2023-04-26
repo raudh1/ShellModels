@@ -199,15 +199,16 @@ class STDtraining(TrainFunction):
 
         return model_name,optimizer_name
 
-    def train_model(self, nepochs=10, nprints=10,folder=''):
+    def train_model(self, nepochs=10, nprints=10,folder='',noise=0.0):
         """
         Basic training
 
         The training sequence is processed as a long sequence. 
         For each time step       
-        y_{t+1} = model(x_t,h_t)
-        
+        y_{t+1} = model(x_t + noise*th.rand() ,h_t)
+        Where noise is the standard deviation 
         """
+        print(noise)
         model=self.model
         optimizer=self.optimizer
         train=self.train.to(device)
@@ -229,10 +230,10 @@ class STDtraining(TrainFunction):
                 model.train()
                 optimizer.zero_grad()
                 if model_name=='lstm':
-                    out, (h, c) = model(train[:-1])
+                    out, (h, c) = model(train[:-1] + noise * th.randn(train[:-1].shape))
                     loss = criterion(out.to(device), train[1:])
                 elif model_name=='mlp':
-                    out = model(train[:-1])
+                    out = model(train[:-1] + noise * th.randn(train[:-1].shape))
                     loss = criterion(out.to(device), train[1:])
                         
                 loss.backward()
@@ -277,10 +278,10 @@ class STDtraining(TrainFunction):
                 def closure(): 
                     optim.zero_grad()
                     if model_name=='lstm':
-                        out, (h, c) = model(train[:-1].to(device))
+                        out, (h, c) = model(train[:-1] + noise * th.randn(train[:-1].shape))
                         loss = criterion(out.to(device), train[1:].to(device))
                     if model_name=='mlp':
-                        out = model(train[:-1])
+                        out = model(train[:-1] + noise * th.randn(train[:-1].shape))
                         loss = criterion(out, train[1:])
                     loss.backward()
                     return loss
@@ -308,6 +309,7 @@ class STDtraining(TrainFunction):
                     bestmodel=model.load_state_dict(th.load('./results_LBFGS/models/epochs_'+str(nepochs)))
             model=bestmodel
             return train_loss, valid_loss
+
 
 
 class FORtraining(TrainFunction):
@@ -355,6 +357,7 @@ class FORtraining(TrainFunction):
         $$
 
         """
+        
         patience=self.patience
         model=self.model
         optimizer=self.optimizer
@@ -367,6 +370,7 @@ class FORtraining(TrainFunction):
         #model=model.to(device)
         ## Data splitting
         # Train
+        bestmodel=model
         L = len(train)
         nex = (L - future - history)
         nbatch = nex // bsize
@@ -448,7 +452,7 @@ class FORtraining(TrainFunction):
                     for i in range(nbatchV):
                         #print("!!! in batch !!")
                         bidx = indicesV[i * bsize:min((i + 1) * bsize, LV)]
-                        inputs, refs = batchify(valid, bidx, history, future)
+                        inputs, refs = batchify(valid, bidx, history, future,model)
                         h0, c0 = model.get_init(bsize)
                         outputs, (h, c) = model.generate(inputs.to(device), future, h0, c0)
                         validloss = criterion(outputs, refs.to(device))
