@@ -161,6 +161,7 @@ class TrainFunction:
                 bsize=100,
                 nprints=10,
                 patience=50,
+                noise=0,
                 save=False
                 ):
         self.patience=patience
@@ -173,13 +174,14 @@ class TrainFunction:
         self.nepochs=nepochs
         self.nprints=nprints
         self.save=save
+        self.noise=noise
 
 
 class STDtraining(TrainFunction):
 
 
-    def __init__(self, model, optimizer, train, valid, history=1, future=15, patience=50 ,nepochs=10, bsize=100, nprints=10, save=False):
-        super().__init__(model, optimizer, train, valid, history, future, nepochs, bsize,patience, nprints, save)
+    def __init__(self, model, optimizer, train, valid, history=1, future=15, patience=50,noise=0, nepochs=10, bsize=100, nprints=10, save=False):
+        super().__init__(model, optimizer, train, valid, history, future, nepochs, bsize,patience, nprints,noise, save)
 
 
     def get_param(self,model,optimizer):
@@ -199,7 +201,7 @@ class STDtraining(TrainFunction):
 
         return model_name,optimizer_name
 
-    def train_model(self, nepochs=10, nprints=10,folder='',noise=0.0):
+    def train_model(self, nepochs=10, nprints=10,folder=''):
         """
         Basic training
 
@@ -208,19 +210,21 @@ class STDtraining(TrainFunction):
         y_{t+1} = model(x_t + noise*th.rand() ,h_t)
         Where noise is the standard deviation 
         """
-        print(noise)
         model=self.model
         optimizer=self.optimizer
         train=self.train.to(device)
         valid=self.valid.to(device)
         nepochs=self.nepochs
         save=self.save
+        noise=self.noise
+
         train_loss = []
         valid_loss = []
         i = 0
         min_perf=900000          # param used to find (and save) min validation loss model
         criterion = nn.MSELoss()
-        
+        print("noise",noise)
+
 
         
         model_name,optimizer_name=self.get_param(model,optimizer)
@@ -315,8 +319,8 @@ class STDtraining(TrainFunction):
 class FORtraining(TrainFunction):
 
     def __init__(self, model, optimizer, train, valid, history=1, future=15,
-     nepochs=10, bsize=100, nprints=10, patience=50 , save=False):
-        super().__init__(model, optimizer, train, valid, history, future,nepochs, bsize, nprints,patience, save)
+     nepochs=10, bsize=100, nprints=10, patience=50 ,noise=0, save=False):
+        super().__init__(model, optimizer, train, valid, history, future,nepochs, bsize, nprints,patience,noise, save)
 
 
     def get_param(self,model,optimizer):
@@ -367,6 +371,7 @@ class FORtraining(TrainFunction):
         history=self.history
         future=self.future
         save=self.save
+        noise=self.noise
         #model=model.to(device)
         ## Data splitting
         # Train
@@ -385,9 +390,6 @@ class FORtraining(TrainFunction):
         np.random.shuffle(indices)
         # Init.
         #optimizer = th.optim.LBFGS(model.parameters(),lr=0.1)
-
-
-
         
         train_loss = []
         valid_loss = []
@@ -417,7 +419,7 @@ class FORtraining(TrainFunction):
                     def closure():
                         optimizer.zero_grad()
                         h0, c0 = model.get_init(bsize)
-                        outputs, (h, c) = model.generate(inputs.to(device), future, h0, c0)
+                        outputs, (h, c) = model.generate(inputs.to(device)+ noise * th.randn(inputs.shape), future, h0, c0)
                         loss = criterion(outputs, refs.to(device))
                         loss.backward()
                         global eloss
@@ -482,9 +484,9 @@ class FORtraining(TrainFunction):
                     inputs, refs = batchify(train, bidx, history, future,model)
                     if model_name=='lstm':
                         h0, c0 = model.get_init(bsize)
-                        outputs, (h, c) = model.generate(inputs.to(device), future, h0, c0)
+                        outputs, (h, c) = model.generate(inputs.to(device)+ noise * th.randn(inputs.shape), future, h0, c0)
                     elif model_name=='mlp':
-                        outputs = model.forward(inputs.to(device))
+                        outputs = model.forward(inputs.to(device)+ noise * th.randn(inputs.shape))
                     loss = criterion(outputs, refs.to(device))
                     loss.backward()
                     optimizer.step()

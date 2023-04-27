@@ -6,20 +6,22 @@ parser = argparse.ArgumentParser(description='Train and generate trajectories us
 parser.add_argument('--model', type=str, default='MLP', choices=['MLP', 'LSTM'], help='Type of model to use')
 parser.add_argument('--h', type=int, default=1, help='Number of historical timesteps to consider')
 parser.add_argument('--f', type=int, default=25, help='Number of future timesteps to predict')
-parser.add_argument('--training', type=str, default='FOR', choices=['STD', 'FOR'], help='Type of training to use')
+parser.add_argument('--training', type=str, default='STD', choices=['STD', 'FOR'], help='Type of training to use')
 parser.add_argument('--optim', type=str, default='adam',choices=['adam','lbfgs'], help='Choose the optimizer')
 parser.add_argument('--lr', type=float, default=0.001, help='Learning rate for the optimizer')
 parser.add_argument('--epochs', type=int, default=10, help='Number of epochs for training')
 parser.add_argument('--patience', type=int, default=50, help='Number of epochs of loss not decreasing to stop the train')
-
 parser.add_argument('--batch-size', type=int, default=100, help='Batch size for training')
-parser.add_argument('--print-every', type=int, default=5, help='Print progress every N epochs')
+parser.add_argument('--print-every', type=int, default=10, help='Print progress every N epochs')
+parser.add_argument('--noise', type=float, default=3.141592, help='Adversarial noise')
 parser.add_argument('--nshells', type=int, default=12, help='Number of shells')
 parser.add_argument('--sampling', type=int, default=30, help='Sampling rate for the data')
 parser.add_argument('--run', type=int, default=1, help='Run number')
+parser.add_argument('--savemode', type=bool, default=False, help='Save all results')
 
 
 args = parser.parse_args()
+save_model=args.savemode
 patience=args.patience
 run=args.run
 model_type = args.model
@@ -41,8 +43,12 @@ if nshells==12:
     datafile = 'Uf_N12.npy'
 elif nshells==19:
     sampling=20
-    datafile = 'Uf_N19_200k_.npy'
+    datafile = 'Uf_N19_50k_2nd_test.npy' #'Uf_N19_1100k_.npy'
 
+#----------------------standard deviation of noise--------------#
+
+noise=args.noise
+print("noise inside test",noise)
 #----------------------param physical data----------------------#
 N=nshells
 knn=np.power(2,np.arange(N+4))
@@ -56,15 +62,14 @@ def folder_generator(save_data=False,save_plot=False,save_model=False,
     
     if save_model:
         return folder+'model/'
-        print("folder",folder_generator(save_model=True))
+        #print("folder",folder_generator(save_model=True))
     if save_data:
         return folder+'raw/'
-        print("folder",folder_generator(save_data=True))
-
+        #print("folder",folder_generator(save_data=True))
 
     if save_plot:
         return folder+'plot/'
-        print("folder",folder_generator(save_plot=True))
+        #print("folder",folder_generator(save_plot=True))
 
 
 
@@ -83,15 +88,17 @@ train_data, valid_data, test_data = split_data(data)
 
 if training_type == 'STD':
         trainer = STDtraining(model, optimizer, train_data, valid_data,
-                          history=h, future=f, nepochs=nepochs,patience=patience, bsize=bsize, nprints=nprints, save=False)
+                          history=h, future=f, nepochs=nepochs,patience=patience, bsize=bsize, nprints=nprints,noise=noise, save=save_model)
 elif training_type == 'FOR':
     trainer = FORtraining(model, optimizer, train_data, valid_data,
-                          history=h, future=f, nepochs=nepochs,patience=patience, bsize=bsize, nprints=nprints, save=False)
+                          history=h, future=f, nepochs=nepochs,patience=patience, bsize=bsize, nprints=nprints,noise=noise, save=save_model)
 
 train_loss, valid_loss = trainer.train_model()
 
-
-traj = model.generate(train_data, len(data)).cpu().detach().numpy()
+if model_type=='MLP':
+    traj = model.generate(train_data, len(data)).cpu().detach().numpy()
+if model_type=='LSTM':
+    traj = model.generate(train_data, len(data))[0].cpu().detach().numpy()
 print("TRAJ SHAPE ",traj.shape)
 regen=traj*(max-min)+min
 #print("max, min = ",max,min)
