@@ -8,12 +8,12 @@
 #SBATCH --cpus-per-task=10 
 #SBATCH --mem=16gb                     # Job memory request
 #SBATCH --time=24:00:00               # Time limit hrs:min:sec
-#SBATCH --output=./log/LSTM_for_N19_lbfgs_50k_train_21_30_%j.log   # Standard output and error log
+#SBATCH --output=./log/LSTM_for_N19_lbfgs_50k_train_50_80_new_dataset_%j.log   # Standard output and error log
 pwd; hostname; date
 
-for n in {21..30}
+for n in {50..80}
 	do
-	srun python test.py --run $n --epochs 300 --training FOR --nshells 19 --model LSTM --optim lbfgs --batch-size 1000 --lr 0.002 --patience 100
+	srun python test.py --run $n --epochs 300 --training FOR --nshells 19 --model LSTM --optim lbfgs --batch-size 1000 --lr 0.001 --patience 200
 	echo "finished run " $n
 	done
 date
