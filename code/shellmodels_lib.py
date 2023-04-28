@@ -234,10 +234,10 @@ class STDtraining(TrainFunction):
                 model.train()
                 optimizer.zero_grad()
                 if model_name=='lstm':
-                    out, (h, c) = model(train[:-1] + noise * th.randn(train[:-1].shape))
+                    out, (h, c) = model(train[:-1] + noise * th.randn(train[:-1].shape).to(device))
                     loss = criterion(out.to(device), train[1:])
                 elif model_name=='mlp':
-                    out = model(train[:-1] + noise * th.randn(train[:-1].shape))
+                    out = model(train[:-1] + noise * th.randn(train[:-1].shape).to(device))
                     loss = criterion(out.to(device), train[1:])
                         
                 loss.backward()
@@ -282,10 +282,10 @@ class STDtraining(TrainFunction):
                 def closure(): 
                     optim.zero_grad()
                     if model_name=='lstm':
-                        out, (h, c) = model(train[:-1] + noise * th.randn(train[:-1].shape))
+                        out, (h, c) = model(train[:-1] + noise * th.randn(train[:-1].shape).to(device))
                         loss = criterion(out.to(device), train[1:].to(device))
                     if model_name=='mlp':
-                        out = model(train[:-1] + noise * th.randn(train[:-1].shape))
+                        out = model(train[:-1] + noise * th.randn(train[:-1].shape).to(device))
                         loss = criterion(out, train[1:])
                     loss.backward()
                     return loss
@@ -419,7 +419,7 @@ class FORtraining(TrainFunction):
                     def closure():
                         optimizer.zero_grad()
                         h0, c0 = model.get_init(bsize)
-                        outputs, (h, c) = model.generate(inputs.to(device)+ noise * th.randn(inputs.shape), future, h0, c0)
+                        outputs, (h, c) = model.generate(inputs.to(device)+ noise * th.randn(inputs.shape).to(device), future, h0, c0)
                         loss = criterion(outputs, refs.to(device))
                         loss.backward()
                         global eloss
@@ -484,9 +484,9 @@ class FORtraining(TrainFunction):
                     inputs, refs = batchify(train, bidx, history, future,model)
                     if model_name=='lstm':
                         h0, c0 = model.get_init(bsize)
-                        outputs, (h, c) = model.generate(inputs.to(device)+ noise * th.randn(inputs.shape), future, h0, c0)
+                        outputs, (h, c) = model.generate(inputs.to(device)+ noise * th.randn(inputs.shape).to(device), future, h0, c0)
                     elif model_name=='mlp':
-                        outputs = model.forward(inputs.to(device)+ noise * th.randn(inputs.shape))
+                        outputs = model.forward(inputs.to(device)+ noise * th.randn(inputs.shape).to(device))
                     loss = criterion(outputs, refs.to(device))
                     loss.backward()
                     optimizer.step()
