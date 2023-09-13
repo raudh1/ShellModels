@@ -1,13 +1,8 @@
 # ShellModels
+This repo contains the source code of a Shell Model of Turbulence  
+**Description**
 
-# to do 
-- variance plot
-- correlation times in different scales
-- why forecast works
-- evaluate critical exponents for different dataset to show better the perfomance improvement
-
-# done
-- check case 50k by splitting 100k dataset --- done and results are the same
-- rewrite table with results
-- firts impression on training LSTM for 12 with noise is that this approach obstruct the learning;
-- in a std approach it seems to have an influence (to investigate)
+In the folder *code*, there is the source code. 
+To run a simulation run the file test.py, with different options. 
+The code is thought to be run on an HPC, it works both on CPU or GPU (cuda).  
+The required libraries are in the file libraries.py
