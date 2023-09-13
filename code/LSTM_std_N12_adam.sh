@@ -8,12 +8,12 @@
 #SBATCH --cpus-per-task=10 
 #SBATCH --mem=16gb                     # Job memory request
 #SBATCH --time=24:00:00               # Time limit hrs:min:sec
-#SBATCH --output=./log/LSTM_std_N12_1_20_noise0_01_%j.log   # Standard output and error log
+#SBATCH --output=./log/LSTM_std_N12_1_20_noise0_001_%j.log   # Standard output and error log
 pwd; hostname; date
 
 for n in {1..20}
 	do
-	srun python test.py --run $n --epochs 1000 --training STD --nshells 12 --model LSTM --optim adam --noise 0.01
+	srun python test.py --run $n --epochs 1000 --training STD --nshells 12 --model LSTM --optim adam --noise 0.001
 	echo "finished run " $n
 	done
 date

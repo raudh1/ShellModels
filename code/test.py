@@ -15,6 +15,7 @@ parser.add_argument('--batch-size', type=int, default=100, help='Batch size for 
 parser.add_argument('--print-every', type=int, default=10, help='Print progress every N epochs')
 parser.add_argument('--noise', type=float, default=3.141592, help='Adversarial noise')
 parser.add_argument('--nshells', type=int, default=12, help='Number of shells')
+parser.add_argument('--dataset', type=str, default='10k',choices=['10k','50k'], help='choose dataset length')
 parser.add_argument('--sampling', type=int, default=30, help='Sampling rate for the data')
 parser.add_argument('--run', type=int, default=1, help='Run number')
 parser.add_argument('--savemode', type=bool, default=False, help='Save all results')
@@ -24,6 +25,7 @@ args = parser.parse_args()
 save_model=args.savemode
 patience=args.patience
 run=args.run
+dataset=args.dataset
 model_type = args.model
 h = args.h
 f = args.f
@@ -40,10 +42,14 @@ datapath ='../dataset/N'+str(nshells)+'/'
 sampling = args.sampling
 if nshells==12:
     sampling=30
-    datafile = 'Uf_N12.npy'
+    if dataset=='10k':
+        datafile = 'Uf_N12.npy'
 elif nshells==19:
     sampling=20
-    datafile = 'Uf_N19_50k_2nd_test.npy' #'Uf_N19_1100k_.npy'
+    if dataset=='10k':
+        datafile = 'Uf_N19_200k_.npy'        #'Uf_N19_50k_2nd_test.npy' #'Uf_N19_1100k_.npy'
+    elif dataset=='50k':
+        datafile = 'Uf_N19_1100k_.npy'
 
 #----------------------standard deviation of noise--------------#
 
